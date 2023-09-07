@@ -5,7 +5,12 @@
     <AssemblyName>Cloud.Unum.USearch</AssemblyName>
     <RootNamespace>Cloud.Unum.USearch</RootNamespace>
     <DebugType>embedded</DebugType>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Memory" Version="4.5.5"/>
+  </ItemGroup>
 
   <!-- IMPORT NUGET PACKAGE SHARED PROPERTIES -->
   <Import Project="$(CSharpDir)/nuget/nuget-package.props" />

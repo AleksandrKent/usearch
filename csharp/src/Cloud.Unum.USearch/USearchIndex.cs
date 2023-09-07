@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using static Cloud.Unum.USearch.NativeMethods;
 
@@ -135,10 +136,14 @@ public class USearchIndex : IDisposable
         HandleError(error);
     }
 
-    public void Add(ulong key, double[] vector)
+    public unsafe void Add(ulong key, ReadOnlySpan<float> vector)
     {
         this.CheckIncreaseCapacity(1);
-        usearch_add(this._index, key, vector, ScalarKind.Float64, out IntPtr error);
+        IntPtr error;
+        fixed (void* ptr = &MemoryMarshal.GetReference(vector))
+        {
+            usearch_add(this._index, key, (IntPtr)ptr, ScalarKind.Float32, out error);
+        }
         HandleError(error);
     }
 
@@ -150,6 +155,24 @@ public class USearchIndex : IDisposable
             usearch_add(this._index, keys[i], vectors[i], ScalarKind.Float32, out IntPtr error);
             HandleError(error);
         }
+    }
+
+    public void Add(ulong key, double[] vector)
+    {
+        this.CheckIncreaseCapacity(1);
+        usearch_add(this._index, key, vector, ScalarKind.Float64, out IntPtr error);
+        HandleError(error);
+    }
+
+    public unsafe void Add(ulong key, ReadOnlySpan<double> vector)
+    {
+        this.CheckIncreaseCapacity(1);
+        IntPtr error;
+        fixed (void* ptr = &MemoryMarshal.GetReference(vector))
+        {
+            usearch_add(this._index, key, (IntPtr)ptr, ScalarKind.Float64, out error);
+        }
+        HandleError(error);
     }
 
     public void Add(ulong[] keys, double[][] vectors)

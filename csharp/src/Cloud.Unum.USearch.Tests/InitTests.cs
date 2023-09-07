@@ -45,6 +45,18 @@ public class InitTests
     }
 
     [Fact]
+    public void AddSpanDoubleVectorSucceeds()
+    {
+        using (var index = new USearchIndex(MetricKind.Cos, ScalarKind.Float64, 3))
+        {
+            index.Add(1, (new double[] { 1.0, 2.0, 3.0 }).AsSpan());
+            Assert.True(index.Contains(1));
+            Assert.False(index.Contains(2));
+            Assert.Equal((uint)1, index.Size());
+        }
+    }
+
+    [Fact]
     public void AddDoubleVectorsUnderSameKeySucceeds()
     {
         using (var index = new USearchIndex(MetricKind.Cos, ScalarKind.Float64, 3, multi: true))

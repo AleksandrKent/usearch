@@ -47,6 +47,15 @@ internal static class NativeMethods
     public static extern void usearch_add(
         usearch_index_t index,
         usearch_key_t key,
+        [In] void_ptr_t vector,
+        ScalarKind vector_kind,
+        out usearch_error_t error
+    );
+
+    [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+    public static extern void usearch_add(
+        usearch_index_t index,
+        usearch_key_t key,
         [In] float[] vector,
         ScalarKind vector_kind,
         out usearch_error_t error
