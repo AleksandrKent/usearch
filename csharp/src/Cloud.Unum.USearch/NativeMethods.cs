@@ -110,6 +110,15 @@ internal static class NativeMethods
         out usearch_error_t error
     );
 
+    [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
+    public static extern size_t usearch_get(
+        usearch_index_t index,
+        usearch_key_t key,
+        size_t count,
+        [Out] void_ptr_t vector,
+        ScalarKind vector_kind,
+        out usearch_error_t error
+    );
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl)]
     public static extern size_t usearch_get(

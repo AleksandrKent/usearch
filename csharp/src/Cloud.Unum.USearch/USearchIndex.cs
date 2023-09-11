@@ -1,5 +1,5 @@
 using System;
-using System.Runtime.CompilerServices;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using static Cloud.Unum.USearch.NativeMethods;
 
@@ -136,17 +136,6 @@ public class USearchIndex : IDisposable
         HandleError(error);
     }
 
-    public unsafe void Add(ulong key, ReadOnlySpan<float> vector)
-    {
-        this.CheckIncreaseCapacity(1);
-        IntPtr error;
-        fixed (void* ptr = &MemoryMarshal.GetReference(vector))
-        {
-            usearch_add(this._index, key, (IntPtr)ptr, ScalarKind.Float32, out error);
-        }
-        HandleError(error);
-    }
-
     public void Add(ulong[] keys, float[][] vectors)
     {
         this.CheckIncreaseCapacity((ulong)vectors.Length);
@@ -164,17 +153,6 @@ public class USearchIndex : IDisposable
         HandleError(error);
     }
 
-    public unsafe void Add(ulong key, ReadOnlySpan<double> vector)
-    {
-        this.CheckIncreaseCapacity(1);
-        IntPtr error;
-        fixed (void* ptr = &MemoryMarshal.GetReference(vector))
-        {
-            usearch_add(this._index, key, (IntPtr)ptr, ScalarKind.Float64, out error);
-        }
-        HandleError(error);
-    }
-
     public void Add(ulong[] keys, double[][] vectors)
     {
         this.CheckIncreaseCapacity((ulong)vectors.Length);
@@ -183,6 +161,56 @@ public class USearchIndex : IDisposable
             usearch_add(this._index, keys[i], vectors[i], ScalarKind.Float64, out IntPtr error);
             HandleError(error);
         }
+    }
+
+    public unsafe void Add<T>(ulong key, ReadOnlySpan<T> vector) where T : unmanaged
+    {
+        var scalarKind = Utils.GetScalarKind(typeof(T));
+        this.CheckIncreaseCapacity(1);
+        IntPtr error;
+        fixed (void* ptr = vector)
+        {
+            usearch_add(this._index, key, (IntPtr)ptr, scalarKind, out error);
+        }
+        HandleError(error);
+    }
+
+    public unsafe void Add<T>(ulong[] keys, IList<ReadOnlyMemory<T>> vectors) where T : unmanaged
+    {
+        var scalarKind = Utils.GetScalarKind(typeof(T));
+        this.CheckIncreaseCapacity((ulong)keys.Length);
+
+        int index = 0;
+        foreach (var vector in vectors)
+        {
+            fixed (void* ptr = &MemoryMarshal.GetReference<T>(vector.Span))
+            {
+                usearch_add(this._index, keys[index], (IntPtr)ptr, scalarKind, out IntPtr error);
+                HandleError(error);
+            }
+            index++;
+        }
+
+    }
+
+    public unsafe int Get<T>(ulong key, int count, out IList<ReadOnlyMemory<T>> vectors) where T : unmanaged
+    {
+        ScalarKind vectorKind = Utils.GetScalarKind(typeof(T));
+        var flattenVectors = new T[count * (int)this._cachedDimensions];
+        int foundVectorsCount = 0;
+
+        fixed (void* ptr = &flattenVectors[0])
+        {
+            foundVectorsCount = checked((int)usearch_get(this._index, key, (UIntPtr)count, (IntPtr)ptr, vectorKind, out IntPtr error));
+            HandleError(error);
+            vectors = new List<ReadOnlyMemory<T>>(foundVectorsCount);
+            for (int i = 0; i < foundVectorsCount; i++)
+            {
+                vectors.Add(new ReadOnlyMemory<T>(flattenVectors, i * (int)this._cachedDimensions, (int)this._cachedDimensions));
+            }
+        }
+
+        return foundVectorsCount;
     }
 
     public int Get(ulong key, out float[] vector)

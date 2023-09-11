@@ -49,7 +49,7 @@ public class InitTests
     {
         using (var index = new USearchIndex(MetricKind.Cos, ScalarKind.Float64, 3))
         {
-            index.Add(1, (new double[] { 1.0, 2.0, 3.0 }).AsSpan());
+            index.Add(1, (new double[] { 1.0, 2.0, 3.0 }));
             Assert.True(index.Contains(1));
             Assert.False(index.Contains(2));
             Assert.Equal((uint)1, index.Size());
@@ -327,6 +327,31 @@ public class InitTests
             Assert.False(index.Contains(1));
             Assert.True(index.Contains(2));
             Assert.True(index.Contains(3));
+        }
+    }
+
+    [Fact]
+    public void ItCanGetGenericFloatArray()
+    {
+        // Arrange
+        using (var index = new USearchIndex(MetricKind.L2sq, ScalarKind.Float32, 2))
+        {
+            var inputVectors = new float[][] {
+                    new float[] { 1.0f, 6.0f, 11.0f },
+                    new float[] { 2.0f, 7.0f, 12.0f },
+                    new float[] { 3.0f, 8.0f, 13.0f },
+                    new float[] { 5.0f, 10.0f, 15.0f }
+            };
+            index.Add(
+                new ulong[] { 2, 2, 2, 2 },
+                inputVectors
+            );
+
+            // Act
+            int foundVectorsCount = index.Get<float>(2, 3, out IList<ReadOnlyMemory<float>> retrievedVectors);
+
+            //Assert
+            Assert.Equal(3, foundVectorsCount);
         }
     }
 
